@@ -1,11 +1,13 @@
 import random 
+import time
+
 
 # Argumentos 
 txMutation = 1#%
 txCrossover = 60#%
 txMortalidade = 50#%
 qttyGen = 5
-qttyPointCrossOver = 1
+qttyPointCrossOver = 2
 qttyInit = 5
 
 """
@@ -51,6 +53,7 @@ class Individual:
         Método de crossover de dois individuos considerando qttyPointCrossOver como quantidade cortes nos cromossomos dos pais
     """
     def crossover(self, anotherParent):
+        
         #pega a lista de cortes aleatorio e as ordena
         listCuts = [0, self.size]
         for i in range(qttyPointCrossOver):
@@ -69,7 +72,9 @@ class Individual:
         sonChromosomes = []
         for pieceSelf, pieceAnother in piecesOfChromosomes:
             sonChromosomes += pieceSelf if bool(random.getrandbits(1)) else pieceAnother
-        return Individual(sonChromosomes)
+        
+        son = Individual(sonChromosomes)
+        return son
      
     def __str__(self):
         r = '"'
@@ -115,32 +120,36 @@ def runOnProbability(probability, fun):
         fun()
         aux -= 100
 
+t1 = time.time()
 # Geração da população inicial
 population = []
 while(len(population) != qttyInit):
     population.append(Individual(randomChromosomes(5)))
 totalPopulationSum = sum(i.fx for i in population)
+print("população inicial")
+print(population)
 
 # Passagem do tempo entre as gerações
 for gen in range(qttyGen):
     newGen = []
     for individual in population:
-        #mutação
+        # Mutação txMutation vezes
         runOnProbability(txMutation, lambda:
             individual.mutation()
         )
 
-        #  Crossover txCrossovervezes
+        # Crossover txCrossover vezes
         runOnProbability(txCrossover, lambda:
             # Adiciona a nova geração o filho do individuo com outro parente aleatorio escolhido baseado na força de adaptação dos participantes da população, excluindo o individuo de ser o outro parente
             newGen.append(
-                random.choices(
-                    population,
-                    weights=[i.fx/totalPopulationSum if not i.x==individual.x else 0 for i in population]
-                )[0]
+                individual.crossover(
+                    random.choices(
+                        population,
+                        weights=[i.fx/totalPopulationSum if not i.x==individual.x else 0 for i in population]
+                    )[0]
+                )
             )
         )
-
         # Adiciona o individuo na nova geração
         newGen.append(individual)
 
@@ -161,8 +170,11 @@ for gen in range(qttyGen):
 
 # Rankea os individuos pelos indices
 population = sorted(population, key=lambda x: x.fx, reverse=True)
+t2 = time.time()
 
 print("População final:")
 print(population)
 print("Melhor individuo:")
 print(population[0])
+print("Resultados prontos em:")
+print(t2-t1)
